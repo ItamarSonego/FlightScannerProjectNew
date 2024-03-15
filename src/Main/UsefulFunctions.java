@@ -1,5 +1,8 @@
 package Main;
+import java.time.LocalDate;
 import java.util.Scanner;
+
+import org.checkerframework.checker.units.qual.s;
 
 public class UsefulFunctions {
     static Scanner input = new Scanner(System.in);
@@ -70,6 +73,19 @@ public class UsefulFunctions {
             if (year < 2024) System.out.print("\rEnter a valid year from 2024: ");         
         }
         return year;
+    }
+
+    public static String dateFormatterForMomondo(LocalDate ld) {
+        String month = formatStringFirstUpper(ld.getMonth().toString());
+        int dayOfMonth = ld.getDayOfMonth();
+        int year = ld.getYear();
+        return "'" + month + " " + dayOfMonth + ", " + year + "'";
+    }
+
+    public static String formatStringFirstUpper(String string) {
+        string = string.toUpperCase();
+        string = string.charAt(0) + string.substring(1).toLowerCase();
+        return string;
     }
 
 }
