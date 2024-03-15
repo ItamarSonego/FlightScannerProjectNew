@@ -21,17 +21,23 @@ import Sites.*;
 import net.bytebuddy.asm.Advice.Local;
 public class App {
     public static void main(String[] args) throws Exception {
+    
         System.setProperty("webdriver.chrome.driver", "D:\\Work\\Programming\\ImportantFiles\\chromedriver.exe");
-        // Flight flight = Flight.buildFlight();
         HashMap<FlightScanners, Integer> websiteToPrice = new HashMap<>();
+        // websiteToPrice.put(FlightScanners.GOOGLEFLIGHTS, GoogleFlights.searchFlight(flight));
+        // websiteToPrice.put(FlightScanners.KIWI, Kiwi.searchFlight(flight));
+        // websiteToPrice.put(FlightScanners.ELAL, Elal.searchFlight(flight));
+        // websiteToPrice.put(FlightScanners.SKYSCANNER, SkyScanner.searchFlight(flight));
+        // websiteToPrice.put(FlightScanners.MOMONDO, Momondo.searchFlight(flight));
         
-        // ArrayList<Passenger> passengers = new ArrayList<>();
-        // passengers.add(new Passenger(1));
-        // passengers.add(new Passenger(14));
-        // passengers.add(new Passenger(17));
-        // passengers.add(new Passenger(20));
-        // Flight flight = new Flight("New York", "Pyongyang", 800, 1, LocalDate.of(2024, 8, 4), LocalDate.of(2024, 8, 8), passengers);
-        // GoogleFlights.searchFlight(flight);
+        ArrayList<Passenger> passengers = new ArrayList<>();
+        passengers.add(new Passenger(1));
+        passengers.add(new Passenger(14));
+        passengers.add(new Passenger(17));
+        passengers.add(new Passenger(20));
+        Flight flight = new Flight("Tel Aviv", "Vienna", 800, 1, LocalDate.of(2024, 8, 4), LocalDate.of(2024, 8, 8), passengers);
+        Momondo.enterPlaces(flight);
+        Momondo.choosePassengersAges(flight);
 
         
 

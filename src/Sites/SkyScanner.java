@@ -2,9 +2,17 @@ package Sites;
 
 import java.util.Random;
 
-import Main.ageRange;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 
+import Main.*;
 public class SkyScanner extends FlightSearchSite{
-    public static ageRange adultAge = new ageRange(16, 120);
-    public static ageRange childAge = new ageRange(0, 15);
+    public static ageRange adultAgeRange = new ageRange(16, 120);
+    public static ageRange childAgeRange = new ageRange(0, 15);
+    static WebDriver browser = new ChromeDriver();
+
+
+
+
 }

@@ -30,9 +30,9 @@ import org.openqa.selenium.chrome.ChromeDriver;
 
 public class GoogleFlights extends FlightSearchSite{
 
-    public static ageRange adultAge = new ageRange(12, 120);
-    public static ageRange childAge = new ageRange(2, 11);
-    public static ageRange infantAge = new ageRange(0, 1);
+    public static ageRange adultAgeRange = new ageRange(12, 120);
+    public static ageRange childAgeRange = new ageRange(2, 11);
+    public static ageRange infantAgeRange = new ageRange(0, 1);
     static WebDriver browser = new ChromeDriver();
 
     //combines all the functions to one main function
@@ -75,13 +75,13 @@ public class GoogleFlights extends FlightSearchSite{
         
         for (Passenger passenger : flight.getPassengers()) {
 
-            if (adultAge.contains(passenger.getAge())) {
+            if (adultAgeRange.contains(passenger.getAge())) {
                 plusIconAdults.click();
             }
-            else if (childAge.contains(passenger.getAge())) {
+            else if (childAgeRange.contains(passenger.getAge())) {
                 plusIconChildren.click();
             }
-            else {
+            else if (infantAgeRange.contains(passenger.getAge())) {
                 plusIconInfants.click();
             }
         }
@@ -101,9 +101,9 @@ public class GoogleFlights extends FlightSearchSite{
         Thread.sleep(500);
         WebElement departureDateBox = browser.findElement(By.cssSelector("input[placeholder='Departure']"));
         departureDateBox.sendKeys(flight.getStartDate().toString());
-        Thread.sleep(500);
+        Thread.sleep(200);
         WebElement returnDateBox = browser.findElement(By.cssSelector("input[placeholder='Return']"));
-        Thread.sleep(500);
+        Thread.sleep(200);
         returnDateBox.sendKeys(flight.getEndDate().toString());
         returnDateBox.click();
         wait.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[2]/div/div/div[2]/div/div[3]/div[3]/div/button"))).click();
@@ -143,16 +143,23 @@ public class GoogleFlights extends FlightSearchSite{
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[2]/div[3]/div/div/div/div[2]/div/ul/li[2]"))).click();
         
         Thread.sleep(1000);
+        //waiting until the flight board is visible and clicking on it to get to the returning flights page. checking it by looking for the 'round trip' element.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='pIav2d']"))).click();
         
-        // browser.findElement(By.cssSelector("[class='pIav2d']")).click();
-        WebElement priceElement = browser.findElements(By.cssSelector("[role='text']")).get(3);
+        //waiting again for a list item (flight) to be visible and clicking it.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='pIav2d']"))).click();
+
+        //waiting for the new page to be loaded and then taking the price element
+        WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='QORQHb']")));
         
-        String price = priceElement.getAttribute("innerText").substring(1) + " shekels.";
+        //taking the price from the text
+        String price = priceElement.getAttribute("innerText").substring(1);
+        price = price.replace(",", "");
         
-        //converting the price text to integer and returning it
+        // converting the price text to integer and returning it
         try {
             int priceInteger = Integer.parseInt(price);
-            if (priceInteger >= flight.getMaxPrice()) {
+            if (priceInteger <= flight.getMaxPrice()) {
                 return priceInteger;
             }
             else {
@@ -163,7 +170,7 @@ public class GoogleFlights extends FlightSearchSite{
             System.out.println("Error, price is not a number!");
         }
         return 0;
-        }
+    }
 
 
 
