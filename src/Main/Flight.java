@@ -113,9 +113,9 @@ public class Flight {
         for (int i = 1; i <= numOfPassengers; i++) {
             int age = Integer.MIN_VALUE;
             System.out.print("Passenger " + i + ": ");
-            while (age < 0) {
+            while (age < 0 || age > 120) {
                 age = UsefulFunctions.chooseNumber();
-                if (age < 0) System.out.print("Enter a valid age: ");
+                if (age < 0 || age > 120) System.out.print("Enter a valid age: ");
             }
             passengers.add(new Passenger(age));
         }

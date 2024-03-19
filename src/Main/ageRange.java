@@ -35,8 +35,7 @@ public class ageRange {
 
     //#region other methods
     public boolean contains(int age) {
-        if (age >= this.startAge && age <= this.endAge) return true;
-        return false;
+        return age >= this.startAge && age <= this.endAge;
     }
     //#endregion
 

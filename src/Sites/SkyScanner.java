@@ -13,6 +13,9 @@ public class SkyScanner extends FlightSearchSite{
     static WebDriver browser = new ChromeDriver();
 
 
+    public static void enterPlaces(Flight flight) {
+        
+    }
 
 
 }

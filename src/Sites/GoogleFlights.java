@@ -19,6 +19,7 @@ import io.opentelemetry.extension.incubator.propagation.PassThroughPropagator;
 
 import java.security.spec.ECField;
 import java.time.Duration;
+import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -33,23 +34,26 @@ public class GoogleFlights extends FlightSearchSite{
     public static ageRange adultAgeRange = new ageRange(12, 120);
     public static ageRange childAgeRange = new ageRange(2, 11);
     public static ageRange infantAgeRange = new ageRange(0, 1);
-    static WebDriver browser = new ChromeDriver();
 
     //combines all the functions to one main function
-    public static int searchFlight(Flight flight) throws InterruptedException {
+    public static Object[] searchFlight(Flight flight) throws InterruptedException {
         enterPlaces(flight);
         choosePassengerAges(flight);
         chooseDates(flight);
         chooseStops(flight);
-        return chooseBestFlight(flight);
+        
+        Object[] priceAndLink = new Object[2];
+        priceAndLink[0] = chooseBestFlight(flight);
+        priceAndLink[1] = getBestFlightUrl();
+        return priceAndLink;
     }
 
 
     //enters the departure city and landing city that the user entered
     public static void enterPlaces(Flight flight) throws InterruptedException {
+        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(5));
         browser.get(FlightSearchSite.googleFlightsUrl);
         browser.manage().window().maximize();
-        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(5));
 
         WebElement fromBox = browser.findElement(By.cssSelector("input.II2One.j0Ppje.zmMKJ.LbIaRd[aria-label='Where from?']"));
         fromBox.clear();
@@ -80,15 +84,13 @@ public class GoogleFlights extends FlightSearchSite{
             else if (childAgeRange.contains(passenger.getAge())) {
                 plusIconChildren.click();
             }
-            else if (infantAgeRange.contains(passenger.getAge())) {
+            else {
                 plusIconInfants.click();
             }
         }
 
         //adult number starts from 1, so we need to subtract 1
         minusIconAdults.click();
-
-        System.out.println();
 
         //clicking the "done" button
         browser.findElement(By.xpath("/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[1]/div[2]/div/div[2]/div[2]/button[1]")).click();
@@ -115,7 +117,7 @@ public class GoogleFlights extends FlightSearchSite{
     public static void chooseStops(Flight flight) throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(5));
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("svg[class='cqEepf NMm5M']"))).click();
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         switch (flight.getMaxStops()) {
             case 0:
                 browser.findElement(By.cssSelector("input[aria-label='Nonstop only']")).click();
@@ -133,18 +135,25 @@ public class GoogleFlights extends FlightSearchSite{
 
 
     //picks the cheapest flight
-    public static int chooseBestFlight(Flight flight) throws InterruptedException {
-        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(10));
+    public static double chooseBestFlight(Flight flight) throws InterruptedException {
+        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(15));
+        
+        //checking if there is something that covers the 'sort by' button
+        try {
+            browser.findElement(By.cssSelector("[class='I0Kcef']")).click();
+        } catch (org.openqa.selenium.NoSuchElementException e) {
+        }
 
         //clicking on 'sort by' button
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("button[class='VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-Bz112c-UbuQg VfPpkd-LgbsSe-OWXEXe-dgl2Hf ksBjEc lKxP2d LQeN7 zZJEBe']"))).click();
         
         //adding 'price' filter
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[2]/div[3]/div/div/div/div[2]/div/ul/li[2]"))).click();
+        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(By.cssSelector("li.VfPpkd-StrnGf-rymPhb-ibnC6b"))).get(1).click();
         
-        Thread.sleep(1000);
+        Thread.sleep(2000);
+
         //waiting until the flight board is visible and clicking on it to get to the returning flights page. checking it by looking for the 'round trip' element.
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='pIav2d']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("[class='pIav2d']"))).click();
         
         //waiting again for a list item (flight) to be visible and clicking it.
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='pIav2d']"))).click();
@@ -158,9 +167,9 @@ public class GoogleFlights extends FlightSearchSite{
         
         // converting the price text to integer and returning it
         try {
-            int priceInteger = Integer.parseInt(price);
-            if (priceInteger <= flight.getMaxPrice()) {
-                return priceInteger;
+            double priceDouble = Double.parseDouble(price);
+            if (priceDouble <= flight.getMaxPrice()) {
+                return priceDouble;
             }
             else {
                 System.out.println("Price is too high in GoogleFlights.");
@@ -171,6 +180,12 @@ public class GoogleFlights extends FlightSearchSite{
         }
         return 0;
     }
+
+    public static String getBestFlightUrl() {
+        return browser.getCurrentUrl();
+    }
+
+    
 
 
 

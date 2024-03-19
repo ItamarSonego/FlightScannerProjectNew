@@ -13,6 +13,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.WindowType;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -29,32 +30,38 @@ public class Momondo extends FlightSearchSite{
     public static ageRange youthAgeRange = new ageRange(12, 17);
     public static ageRange childAgeRange = new ageRange(2, 11);
     public static ageRange infantAgeRange = new ageRange(0, 1);
-    static WebDriver browser = new ChromeDriver();
-
 
     //combines all the functions to one main function
-    public static void searchFlight(Flight flight) throws InterruptedException {
+    public static Object[] searchFlight(Flight flight) throws InterruptedException {
         enterPlaces(flight);
         choosePassengersAges(flight);
         chooseDates(flight);
         chooseStops(flight);
-        chooseBestFlight(flight);
+        
+        Object[] priceAndLink = new Object[2];
+        priceAndLink[0] = chooseBestFlight(flight);
+        priceAndLink[1] = getBestFlightUrl();
+        
+        return priceAndLink;
     }
+    
     //enters the departure city and landing city that the user entered
     public static void enterPlaces(Flight flight) throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(10));
+        browser.switchTo().newWindow(WindowType.TAB);
         browser.get(FlightSearchSite.momondoUrl);
-        browser.manage().window().maximize();
-        WebElement closeFlightSuggest = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("vvTc-item-close")));
-        
-        while (true) {
-            try {
-                closeFlightSuggest.click();
-            }
-            catch (org.openqa.selenium.StaleElementReferenceException e) {
-                break;
-            }
+        Thread.sleep(1000);
+        boolean removedFlightSuggest = false;
+        try {
+            browser.findElement(By.className("vvTc-item-close")).click();
+            removedFlightSuggest = true;
+        } catch (org.openqa.selenium.NoSuchElementException e) {
         }
+        
+        if (!removedFlightSuggest) {
+            browser.findElement(By.className("c_neb-item-close")).click();
+        }
+
         wait.until(ExpectedConditions.elementToBeClickable((By.cssSelector("[placeholder='From?']")))).sendKeys(flight.getDepartureCity());
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[class='yWDF yWDF-mod-spacing-base']")));
         browser.findElements(By.cssSelector("[class='JyN0-item JyN0-pres-item-mcfly']")).get(0).click();
@@ -75,7 +82,6 @@ public class Momondo extends FlightSearchSite{
         WebElement plusIconYouth = browser.findElements(By.cssSelector("button.bCGf-mod-theme-default")).get(7);
         WebElement plusIconChildren = browser.findElements(By.cssSelector("button.bCGf-mod-theme-default")).get(9);
         WebElement plusIconInfants = browser.findElements(By.cssSelector("button.bCGf-mod-theme-default")).get(11);
-
         for (Passenger passenger : flight.getPassengers()) {
             if (seniorAgeRange.contains(passenger.getAge())) {
                 plusIconSeniors.click();
@@ -89,7 +95,7 @@ public class Momondo extends FlightSearchSite{
             else if (childAgeRange.contains(passenger.getAge())) {
                 plusIconChildren.click();
             }
-            else if (infantAgeRange.contains(passenger.getAge())) {
+            else {
                 plusIconInfants.click();
             }
         }
@@ -109,7 +115,7 @@ public class Momondo extends FlightSearchSite{
         monthNavigaionButtons.get(0).click();
         boolean foundStartDate = false;
         
-        for (int i = 1; i <= 12; i++) {
+        for (int i = 1; i <= 13; i++) {
             try {
                 if (!foundStartDate) {
                     browser.findElement(By.cssSelector("[aria-label=" + startDateToSearch + "]")).click();
@@ -137,7 +143,7 @@ public class Momondo extends FlightSearchSite{
         Thread.sleep(2000);
         WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(10));
         ArrayList<String> tabs = new ArrayList<>(browser.getWindowHandles());
-        browser.switchTo().window(tabs.get(1));
+        browser.switchTo().window(tabs.get(tabs.size() - 1));
         switch (flight.getMaxStops()) {
             case 1:
                 wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("#valueSetFilter-vertical-stops-2"))).click();
@@ -149,19 +155,46 @@ public class Momondo extends FlightSearchSite{
         }
     }
 
-    public static void chooseBestFlight(Flight flight) throws InterruptedException {
+    //chooses the best flight
+    public static double chooseBestFlight(Flight flight) throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(10));
         browser.findElement(By.cssSelector("[aria-label='Navigation menu']")).click();
         browser.findElement(By.cssSelector("[aria-label='United States dollar ']")).click();
         browser.findElement(By.cssSelector("[placeholder='Search for a currency']")).sendKeys("Israeli new shekel");
+        Thread.sleep(1000);
         wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("[class='KmfS KmfS-mod-variant-pill']"))).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[aria-label='close']"))).click();
         Thread.sleep(2000);
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[aria-label='Cheapest']"))).click();
         Thread.sleep(2000);
         String price = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("[class='f8F1-price-text']"))).get(0).getAttribute("innerText");
-        System.out.println(price);
+        price = price.substring(1);
+        price = price.replace(",", "");
+        browser.findElements(By.cssSelector("[class='dOAU-best']")).get(0).click();
+        
+        try {
+            double priceDouble = Double.parseDouble(price) * flight.getPassengers().size();
+            if (priceDouble <= flight.getMaxPrice()) {
+                return priceDouble;
+            }
+            else {
+                System.out.println("Price is too high in Momondo.");
+            }
+        }
+        catch (NumberFormatException nfe) {
+            System.out.println("Error, price is not a number!");
+        }
+        return 0;
     }
 
+    //returns the link of the best flight
+    public static String getBestFlightUrl() {
+        ArrayList<String> tabs = new ArrayList<>(browser.getWindowHandles());
+        browser.switchTo().window(tabs.get(tabs.size() - 1));
+        while (browser.getTitle().contains("momondo")) {
+            continue;
+        }
+        return browser.getCurrentUrl();
     }
+}
 

@@ -1,5 +1,6 @@
 package Main;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Scanner;
 
 import org.checkerframework.checker.units.qual.s;
@@ -87,5 +88,16 @@ public class UsefulFunctions {
         string = string.charAt(0) + string.substring(1).toLowerCase();
         return string;
     }
+
+    public static double findMin(List<Double> list) {
+        double min = list.get(0);
+        for (double x : list) {
+            if (x < min) min = x;
+        }
+        
+        return min;
+    }
+
+    
 
 }
