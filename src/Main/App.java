@@ -2,102 +2,77 @@ package Main;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.HashMap;
-
+import java.util.Map;
+import java.util.Map.Entry;
 import javax.security.auth.kerberos.KeyTab;
-
 import java.time.Duration;
 import java.time.LocalDate;
-
 import org.checkerframework.checker.units.qual.g;
 import org.checkerframework.checker.units.qual.t;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.WebDriver.Options;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.interactions.Actions;
-
-
-import Sites.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.bytebuddy.asm.Advice.Local;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import Sites.*;
+import Utils.*;
+
 public class App {
     public static void main(String[] args) throws Exception {
+        Logger.getLogger("org.openqa.selenium").setLevel(Level.OFF);
         
-        System.setProperty("webdriver.chrome.driver", "D:\\Work\\Programming\\ImportantFiles\\chromedriver.exe");
-        // HashMap<FlightScanners, Integer> websiteToPrice = new HashMap<>();
-        // HashMap<FlightScanners, String> websiteToLink = new HashMap<>();
-
-        ArrayList<Passenger> passengers = new ArrayList<>();
-        passengers.add(new Passenger(60));
-        passengers.add(new Passenger(23));
-        Flight flight = new Flight("buenos aires", "vienna", 100000, 2, LocalDate.of(2024, 4, 7), LocalDate.of(2024, 4, 11), passengers);
-        WebDriver browser = new ChromeDriver();
-        browser.close();
-        // Flight flight = Flight.buildFlight();
+        HashMap<FlightScanners, Double> websiteToPrice= new HashMap<>();
+        HashMap<FlightScanners, String> websiteToLink = new HashMap<>();
         
-        Object[] priceAndLinkGoogle = new Object[2];
-        Object[] priceAndLinkMomondo = new Object[2];
-        Object[] priceAndLinkKiwi = new Object[2];
+        // ArrayList<Passenger> passengers = new ArrayList<>();
+        // passengers.add(new Passenger(60));
+        // passengers.add(new Passenger(23));
+        // Flight flight = new Flight("buenos aires", "vienna", 100000, 2, LocalDate.of(2024, 4, 7), LocalDate.of(2024, 4, 11), passengers);
         
-        //#region searching in every site
-        while (priceAndLinkGoogle[0] == null || priceAndLinkGoogle[1] == null) {
-            try {
-                priceAndLinkGoogle = GoogleFlights.searchFlight(flight);
-            } catch (Exception e) {
-                System.out.println("failed searching in GoogleFlights, retrying...");
-            }
-        }
+        Flight flight = Flight.buildFlight();
 
-        while (priceAndLinkMomondo[0] == null || priceAndLinkMomondo[1] == null) {
-            try {
-                priceAndLinkMomondo = Momondo.searchFlight(flight);
-            } catch (Exception e) {
-                System.out.println("failed searching in Momondo, retrying...");
-            }
-        }
-
-        while (priceAndLinkKiwi[0] == null || priceAndLinkKiwi[1] == null) {
-            try {
-                priceAndLinkKiwi = Kiwi.searchFlight(flight);
-            } catch (Exception e) {
-                System.out.println("failed searching in Kiwi, retrying...");
-            }
-        }
-        //#endregion
-
-        ArrayList<Double> validPrices = new ArrayList<>();
+        Object[] priceAndLinkGoogle = GoogleFlights.searchFlight(flight);
+        Object[] priceAndLinkMomondo  = Momondo.searchFlight(flight);
+        Object[] priceAndLinkKiwi = Kiwi.searchFlight(flight);
         
-        double GoogleFlightsPrice = (double) priceAndLinkGoogle[0];
-        double momondoPrice = (double) priceAndLinkMomondo[0];
-        double kiwiPrice = (double) priceAndLinkKiwi[0];
+        websiteToPrice.put(FlightScanners.GOOGLEFLIGHTS, (double) priceAndLinkGoogle[0]);
+        websiteToPrice.put(FlightScanners.MOMONDO, (double) priceAndLinkMomondo[0]);
+        websiteToPrice.put(FlightScanners.KIWI, (double) priceAndLinkKiwi[0]);
 
-        if (GoogleFlightsPrice != 0) validPrices.add(GoogleFlightsPrice);
-        if (momondoPrice != 0) validPrices.add(momondoPrice);
-        if (kiwiPrice != 0) validPrices.add(kiwiPrice);
+        websiteToLink.put(FlightScanners.GOOGLEFLIGHTS, (String) priceAndLinkGoogle[1]);
+        websiteToLink.put(FlightScanners.MOMONDO, (String) priceAndLinkMomondo[1]);
+        websiteToLink.put(FlightScanners.KIWI, (String) priceAndLinkKiwi[1]);
 
-        double bestPrice = UsefulFunctions.findMin(validPrices);
+        double bestPrice = Double.MAX_VALUE;
         String link = "";
-        
-        if (bestPrice == GoogleFlightsPrice) link = (String) priceAndLinkGoogle[1];
-        if (bestPrice == momondoPrice) link = (String) priceAndLinkMomondo[1];
-        if (bestPrice == kiwiPrice) link = (String) priceAndLinkKiwi[1];
+        FlightScanners flightScanner = null;
 
-        System.out.println("Best price: " + bestPrice);
-        System.out.println("Link: " + link);
+        for (Map.Entry<FlightScanners, Double> entry : websiteToPrice.entrySet()) {
+            if (entry.getValue() < bestPrice && entry.getValue() != 0) {
+                bestPrice = entry.getValue();
+                link = websiteToLink.get(entry.getKey());
+                flightScanner = entry.getKey();
+            }
+        }
 
-
-                            
-                            
-                            
-        
-
-
-
+        if (bestPrice != Double.MAX_VALUE) {
+            System.out.println("\nBest Price is in " + flightScanner.toString() + ", Price: " + bestPrice);
+            System.out.println("Link: " + link);
+        }
+        else {
+            System.out.println("\nNo flight available at this price.");
+        }
     }
-    
-    
 }
+
